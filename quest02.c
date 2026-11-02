@@ -2,17 +2,15 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "queue.h"
 
 #define BUFSIZE         256
 
 struct node {
         int i;
         int digits[10];
-        struct node *next;
 };
 typedef struct node Node;
-
-typedef struct { Node *head, *tail; } Queue;
 
 
 Node *nodecreate()
@@ -20,7 +18,6 @@ Node *nodecreate()
         Node *newnode = (Node *)malloc(sizeof(Node));
         newnode->i = 0;
         for (int i = 0; i < 9; i++) newnode->digits[i] = 0;
-        newnode->next = NULL;
         return newnode;
 }
 
@@ -34,29 +31,6 @@ Node *nodecopy(Node *n)
 }
 
 
-void enqueue(Queue *q, Node *n)
-{
-        if (q->head == NULL)
-                q->head = q->tail = n;
-        else
-                q->tail = q->tail->next = n;
-}
-
-
-Node *dequeue(Queue *q)
-{
-        if (q->head == NULL)
-                return NULL;
-
-        Node *n = q->head;
-        if (n->next == NULL)
-                q->head = q->tail = NULL;
-        else
-                q->head = n->next;
-        return n;
-}
-
-
 int main()
 {
         char buffer[BUFSIZE];
@@ -66,7 +40,7 @@ int main()
                 sprintf(buffer, "inputs/everybody_codes_e2026_q02_p%d.txt", part);
                 FILE *fp = fopen(buffer , "r");
                 long long sum = 0;
-                Queue queue = { NULL, NULL};
+                Queue *queue = queue_create();
 
                 char *ret = fgets(buffer, BUFSIZE, fp);
                 while (ret) {
@@ -96,21 +70,22 @@ int main()
                         for (int i = 1; i <= 9; i++) {
                                 Node *n = nodecreate();
                                 n->digits[0] = i;
-                                enqueue(&queue, n);
+                                queue_enqueue(queue, n);
                         }
 
-                        Node *n = dequeue(&queue);
-                        Node *oldnode;
+                        Node *n = queue_dequeue(queue);
+                        Node *oldnode = NULL;
                         while (n) {
+                                if (oldnode) free(oldnode);
                                 int d = n->digits[n->i++];
                                 for (int i = 1; i <= 9; i++)
                                         if (mtx[d][i]) {
                                                 Node *newnode = nodecopy(n);
                                                 newnode->digits[n->i] = i;
-                                                enqueue(&queue, newnode);
+                                                queue_enqueue(queue, newnode);
                                         }
                                 oldnode = n;
-                                n = dequeue(&queue);
+                                n = queue_dequeue(queue);
                         }
 
                         int number = 0;
