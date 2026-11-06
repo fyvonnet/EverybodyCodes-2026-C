@@ -33,3 +33,11 @@ void *queue_dequeue(Queue *queue)
         return data;
 }
 
+void *queue_peek(Queue *queue)
+{
+        if (queue->head == NULL)
+                return NULL;
+
+       return queue->head->data;
+}
+
