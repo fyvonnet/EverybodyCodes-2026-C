@@ -154,7 +154,7 @@ int main()
 
         int maxres = 0;
         for (int a = 0; a < nportals; a++)
-                for (int  b= 0; b < nportals; b++) {
+                for (int  b = a + 1; b < nportals; b++) {
                         int strain = strain_with_crystals(a, b);
                         if (strain != 0) {
                                 int res = initial_strain - strain;
