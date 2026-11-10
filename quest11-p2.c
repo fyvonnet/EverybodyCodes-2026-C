@@ -5,9 +5,9 @@
 #include <string.h>
 #include "misc.h"
 #include "queue.h"
-#include "redblacktree.h"
 
 #define BUFSIZE 32
+#define MAXCONNS 150
 
 
 typedef struct {
@@ -20,12 +20,13 @@ typedef struct { int distance, portal; } QueueElm;
 
 int nportals;
 Portal *portals;
-RedBlackTree *conns;
+int conns[MAXCONNS];
+int nconns;
 
 
 int compar_conns(const void *a, const void *b)
 {
-        return a - b;
+        return *((int *)a) - *((int *)b);
 }
 
 
@@ -64,22 +65,15 @@ int distances_from_port(int p)
 
 void conn_insert(int a, int b)
 {
-        uint64_t key = (1000 * (a + 1)) + b + 1;
-        redblacktree_insert(conns, (void *)key);
+        int key = (1000 * a) + b;
+        conns[nconns++] = key;
 }
 
 
 bool conn_exist(int a, int b)
 {
-        uint64_t key = (1000 * (a + 1)) + b + 1;
-        return (redblacktree_query(conns, (void *)key) != 0);
-}
-
-
-void conn_print(void *c, void *ptr)
-{
-        uint64_t conn = (uint64_t)c;
-        printf("%2lu %2lu\n", (conn / 1000), (conn % 1000));
+        int key = (1000 * a) + b;
+        return (binsearch(conns, nconns, sizeof(int), compar_conns, &key) != NULL);
 }
 
 
@@ -113,7 +107,6 @@ int main()
         fgets(buffer, BUFSIZE, fp);
         nportals = atoi(buffer + 9);
         portals = malloc(nportals * sizeof(Portal));
-        conns = redblacktree_init(compar_conns);
 
         for (int p = 0; p < nportals; p++) {
                 Portal *ptr = portals + p;
@@ -125,8 +118,8 @@ int main()
                         ptr->dests[ptr->ndests++] = da;
                         ptr->dests[ptr->ndests++] = db;
 
-                        conn_insert(p, da);
-                        conn_insert(p, db);
+                        if (p < da) conn_insert(p, da);
+                        if (p < db) conn_insert(p, db);
                 }
         }
 
@@ -148,9 +141,13 @@ int main()
                 ptr->dests[ptr->ndests++] = a;
                 ret = fgets(buffer, BUFSIZE, fp);
 
-                conn_insert(a, b);
-                conn_insert(b, a);
+                if (a < b)
+                        conn_insert(a, b);
+                else
+                        conn_insert(b, a);
         }
+
+        qsort(conns, nconns, sizeof(int), compar_conns);
 
         int maxres = 0;
         for (int a = 0; a < nportals; a++)
